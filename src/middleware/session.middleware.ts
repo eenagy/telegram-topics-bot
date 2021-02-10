@@ -19,16 +19,19 @@ const localSession = new LocalSession({
       {
         name: 'Funky talk',
         description: "Earum veniam necessitatibus cumque\\. Tempora deleniti dolor animi odit molestias illo\\. Necessitatibus incidunt vel magni\\. Perferendis delectus sit et\\.\\\nIpsum recusandae et sapiente velit\\. Ratione ipsa at eum odio ratione\\. Tenetur quam voluptatem expedita odio\\. Odit aliquid asperiores suscipit\\. Rerum omnis non velit debitis doloremque\\.\\\nCorporis voluptatum occaecati sapiente accusantium natus non ab\\. A non magnam sed\\. Blanditiis et fuga occaecati repudiandae dolorum esse et\\. Cum et ad expedita repellat ipsam omnis suscipit\\.",
-        votes: ['from', 'from2'],
+        votes: [],
         claimedBy: null,
         scheduled: null,
+        topicId: 'abcde1'
       },
       {
         name: 'Another talk',
         description: "",
-        votes: ['from', 'from2'],
+        votes: [],
         claimedBy: null,
         scheduled: null,
+        topicId: 'abcde2'
+
       },
     ],
   },
