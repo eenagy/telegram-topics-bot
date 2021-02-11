@@ -10,6 +10,9 @@ export class SessionStore {
     this.session = context[SESSION_DB_KEY];
   }
 
+  public get activeTopics(): Topic[] {
+    return this.session.get('activeTopics').value();
+  }
   public get topics(): Topic[] {
     return this.session.get('topics').value();
   }
@@ -25,7 +28,7 @@ export class SessionStore {
     if (activeTopicIndex < 0) {
       return null;
     } else {
-      return activeTopics[activeTopicIndex];
+      return activeTopics[activeTopicIndex].topicId;
     }
   }
   public setUserActiveTopicId(userId: string, topicId: string): void {

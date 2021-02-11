@@ -16,6 +16,9 @@ import { Topic } from '../interfaces/topic.interface';
 import { SceneContext } from 'telegraf/typings/scenes';
 import { DESCRIPTION_SCENE_ID } from '../app.constants';
 import { TopicId } from 'src/common/decorators/topicid.decorator';
+import createDebug from 'debug';
+
+const debug = createDebug('dappsbot')
 
 @Update()
 export class TopicsUpdate {
@@ -35,11 +38,13 @@ export class TopicsUpdate {
   `;
   @Start()
   async onStart(@Ctx() ctx: Context): Promise<void> {
+    debug('App started');
     await ctx.replyWithMarkdownV2(this.helpMessage);
   }
 
   @Help()
   async help(ctx: Context): Promise<void> {
+    debug('Help requested');
     await ctx.replyWithMarkdownV2(this.helpMessage);
   }
 
@@ -48,8 +53,11 @@ export class TopicsUpdate {
     @Session() session: SessionStore,
     @Ctx() ctx: Context,
   ): Promise<void> {
+    debug('OnTopics');
     const topics = session.topics;
     if (topics.length < 1) {
+      debug('No topics found.');
+
       await ctx.reply(
         'There is no topic as so far. Be the first one to add a new one',
       );
@@ -67,6 +75,7 @@ export class TopicsUpdate {
           );
         })
         .join('\n');
+      debug('Following topics returned ' + topicsReply);
       await ctx.replyWithMarkdownV2(topicsReply);
     }
   }
@@ -77,8 +86,10 @@ export class TopicsUpdate {
     @Session() session: SessionStore,
     @Message('text') text: string,
   ): Promise<void> {
+    debug('onRequest');
     const nameOfTopics = text.slice(9);
     if (nameOfTopics.replace(' ', '') === '') {
+      debug("no topic's name passed into.");
       await ctx.reply('Please pass a name for creating a topic');
     } else {
       const topics: Array<Topic> = session.topics;
@@ -92,6 +103,7 @@ export class TopicsUpdate {
       };
       topics.push(topic);
       session.topics = topics;
+      debug('New topic added');
       await ctx.replyWithMarkdownV2(
         `new topics ${nameOfTopics} is created with`,
       );
@@ -99,14 +111,16 @@ export class TopicsUpdate {
   }
 
   @Command('submit')
-  async submit(
+  async onSubmit(
     @Ctx() ctx: Context,
     @Sender() from: User,
     @Session() session: SessionStore,
     @Message('text') text: string,
   ): Promise<void> {
+    debug('onSubmit');
     const nameOfTopics = text.slice(9);
     if (nameOfTopics.replace(' ', '') === '') {
+      debug('no name passed for creating topic');
       await ctx.reply('Please pass a name for creating a topic');
     } else {
       const topics: Array<Topic> = session.topics;
@@ -120,6 +134,7 @@ export class TopicsUpdate {
       };
       topics.push(topic);
       session.topics = topics;
+      debug('New topic added');
       await ctx.replyWithMarkdownV2(
         `new topics *${topic.name}* is created and claimed to ${from.username}`,
       );
@@ -132,6 +147,7 @@ export class TopicsUpdate {
     @Sender() from: User,
     @Session() session: SessionStore,
   ): Promise<void> {
+    debug('onModifyDescription');
     const topics: Array<Topic> = session.topics;
     const topicsButton = topics.map(({ name, topicId }) =>
       Markup.button.callback(name, `description---${topicId}`),
@@ -146,15 +162,15 @@ export class TopicsUpdate {
     @Ctx() ctx: SceneContext,
     @TopicId() topicId: string,
     @Sender('id') id: string,
-    @Session() session: SessionStore
-
+    @Session() session: SessionStore,
   ): Promise<void> {
-    console.log(id, topicId)
     session.setUserActiveTopicId(id, topicId);
+    debug(`activeTopic set userId: ${id} topicId: ${topicId}`);
     await ctx.scene.enter(DESCRIPTION_SCENE_ID);
   }
   @Command('claim')
   onClaim(ctx: Context, @Session() session: SessionStore): void {
+    debug('onClaim');
     const topics: Array<Topic> = session.topics;
     const topicsButton = topics.map(({ name, topicId }) =>
       Markup.button.callback(name, `claim---${topicId}`),
@@ -169,21 +185,25 @@ export class TopicsUpdate {
     @Session() session: SessionStore,
     @TopicId() topicId: string,
   ): void {
+    debug('onClaimAction');
+
     const topics: Array<Topic> = session.topics;
     const topicsIndex = topics.findIndex((topic) => topic.topicId === topicId);
     if (topicsIndex < 0) {
+      debug('Could not find topicId');
       ctx.reply('Something went wrong. Please try again');
     } else {
       const topic = topics[topicsIndex];
       topic.claimedBy = from;
       session.topics = topics;
-
+      debug('Topic claimed');
       ctx.reply(`${topic.name} is claimed by @${from.username}`);
     }
   }
 
   @Command('vote')
   onUpvote(@Ctx() ctx: Context, @Session() session: SessionStore): void {
+    debug('onVote');
     const topics: Array<Topic> = session.topics;
 
     const topicsButton = topics.map(({ topicId, name }) =>
@@ -202,24 +222,28 @@ export class TopicsUpdate {
     @Session() session: SessionStore,
     @TopicId() topicId: string,
   ): void {
+    debug('action onUpvote');
+
     const topics: Array<Topic> = session.topics;
     const topicsIndex = topics.findIndex((topic) => topic.topicId === topicId);
     if (topicsIndex < 0) {
+      debug('topicId is empty');
+
       ctx.reply('Something went wrong. Please try again');
     } else {
       const topic = topics[topicsIndex];
       const upvoted = topic.votes.filter((user) => user.id === from.id);
 
       if (upvoted.length > 0) {
+        debug('Topic is already upvoted');
         ctx.reply('Sorry you already upvoted this topic');
-        return;
       } else {
         topic.votes.push(from);
+
+        session.topics = topics;
+        debug('Topic is upvoted');
+        ctx.reply(`${topic.name} is voted up by @${from.username}`);
       }
-
-      session.topics = topics;
-
-      ctx.reply(`${topic.name} is voted up by @${from.username}`);
     }
   }
 }
