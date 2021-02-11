@@ -1,8 +1,14 @@
-# Telegram bot for opengovernance voting for events
+# Telegram bot for creating event topics
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Telegram bot for creating topics and voting for topics inside Telegram.
+Each topic can be claimed by a presenter, the presenter and group admins schedule a date for 
+the topic to be presented.
+
+The project uses
+ - [Nest](https://github.com/nestjs/nest) 
+ - [Nest-telegraf](https://github.com/bukhalo/nestjs-telegraf) telegraf support for Nest.js
 
 ## Installation
 
@@ -20,6 +26,12 @@ $ yarn run start
 
 # watch mode
 $ yarn run start:dev
+
+# debug flag for app
+$ DEBUG='dappsbot' yarn run start:dev
+
+# debug globally
+$ DEBUG=* yarn run start:dev
 
 # production mode
 $ yarn run start:prod

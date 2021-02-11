@@ -105,7 +105,7 @@ export class TopicsUpdate {
       session.topics = topics;
       debug('New topic added');
       await ctx.replyWithMarkdownV2(
-        `new topics ${nameOfTopics} is created with`,
+        `new topic with name ${nameOfTopics} is created`,
       );
     }
   }
@@ -118,7 +118,7 @@ export class TopicsUpdate {
     @Message('text') text: string,
   ): Promise<void> {
     debug('onSubmit');
-    const nameOfTopics = text.slice(9);
+    const nameOfTopics = text.slice(8);
     if (nameOfTopics.replace(' ', '') === '') {
       debug('no name passed for creating topic');
       await ctx.reply('Please pass a name for creating a topic');
