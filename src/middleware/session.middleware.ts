@@ -34,6 +34,7 @@ const localSession = new LocalSession({
 
       },
     ],
+    activeTopics: []
   },
 });
 export const sessionMiddleware = localSession.middleware(property);
