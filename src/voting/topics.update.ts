@@ -150,7 +150,7 @@ export class TopicsUpdate {
 
   ): Promise<void> {
     console.log(id, topicId)
-    session.setUserActiveTopic(id, topicId);
+    session.setUserActiveTopicId(id, topicId);
     await ctx.scene.enter(DESCRIPTION_SCENE_ID);
   }
   @Command('claim')
