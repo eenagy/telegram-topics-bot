@@ -6,6 +6,6 @@ export interface Topic {
   description: string;
   votes: User[];
   claimedBy: User;
-  scheduled: number;
+  scheduled: string;
   topicId: string;
 }

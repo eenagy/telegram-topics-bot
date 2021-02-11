@@ -14,8 +14,8 @@ import { nanoid } from 'nanoid';
 import { Session, SessionStore } from '../common/decorators/session.decorator';
 import { Topic } from '../interfaces/topic.interface';
 import { SceneContext } from 'telegraf/typings/scenes';
-import { DESCRIPTION_SCENE_ID } from '../app.constants';
-import { TopicId } from 'src/common/decorators/topicid.decorator';
+import { DESCRIPTION_SCENE_ID, SCHEDULE_SCENE_ID } from '../app.constants';
+import { TopicId } from '../common/decorators/topicid.decorator';
 import createDebug from 'debug';
 
 const debug = createDebug('dappsbot')
@@ -68,7 +68,7 @@ export class TopicsUpdate {
             `\\- *${name}*\n` +
             `  __Number of votes:__  ${votes.length}\n` +
             `  __Presented by:__         ` +
-            (claimedBy == null ? ' \\-\n' : `${claimedBy}\n`) +
+            (claimedBy == null ? ' \\-\n' : `@${claimedBy.username}\n`) +
             `  __Scheduled for:__        ${scheduled || ' \\-'}\n` +
             `  __Description:__` +
             (description ? `\n\n${description}\n` : '             \\-')
@@ -168,6 +168,36 @@ export class TopicsUpdate {
     debug(`activeTopic set userId: ${id} topicId: ${topicId}`);
     await ctx.scene.enter(DESCRIPTION_SCENE_ID);
   }
+
+  @Command('schedule')
+  async onSchedule(
+    @Ctx() ctx: Context,
+    @Sender() from: User,
+    @Session() session: SessionStore,
+  ): Promise<void> {
+    debug('onSchedule');
+    const topics: Array<Topic> = session.topics;
+    const topicsButton = topics.map(({ name, topicId }) =>
+      Markup.button.callback(name, `schedule---${topicId}`),
+    );
+    ctx.reply(
+      'Select a topic which you would like to add a date for',
+      Markup.inlineKeyboard(topicsButton),
+    );
+  }
+
+  @Action(new RegExp('schedule---[a-zA-Z0-9]*'))
+  async onScheduleAction(
+    @Ctx() ctx: SceneContext,
+    @TopicId() topicId: string,
+    @Sender('id') id: string,
+    @Session() session: SessionStore,
+  ): Promise<void> {
+    session.setUserActiveTopicId(id, topicId);
+    debug(`activeTopic set userId: ${id} topicId: ${topicId}`);
+    await ctx.scene.enter(SCHEDULE_SCENE_ID);
+  }
+
   @Command('claim')
   onClaim(ctx: Context, @Session() session: SessionStore): void {
     debug('onClaim');
