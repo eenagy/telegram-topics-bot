@@ -29,7 +29,9 @@ export class DescriptionScene {
     await ctx.reply('Please tell me the new description');
     this.timeOut = setTimeout(() => {
       if (ctx.scene) {
-        ctx.reply('You took too long to reply, please retry from /description');
+        debug('Description scene autotimeout');
+
+        ctx.reply('You took too long to reply, please retry from /changeDescription');
         ctx.scene.leave();
       }
     }, AUTO_TIMEOUT);

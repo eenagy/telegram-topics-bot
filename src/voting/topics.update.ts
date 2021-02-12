@@ -14,7 +14,7 @@ import { nanoid } from 'nanoid';
 import { Session, SessionStore } from '../common/decorators/session.decorator';
 import { Topic } from '../interfaces/topic.interface';
 import { SceneContext } from 'telegraf/typings/scenes';
-import { DESCRIPTION_SCENE_ID, SCHEDULE_SCENE_ID } from '../app.constants';
+import { DESCRIPTION_SCENE_ID, NAME_SCENE_ID, SCHEDULE_SCENE_ID } from '../app.constants';
 import { TopicId } from '../common/decorators/topicid.decorator';
 import createDebug from 'debug';
 
@@ -29,7 +29,8 @@ export class TopicsUpdate {
      
   /topics \\- gets a list of existing topics people have created
   /request \\[topicsName\\] \\- requests a new topic
-  /description \\- add description to a selected topic
+  /changeDescription \\- change description of  a selected topic
+  /changeName \\- change name of a selected topic
   /submit \\[topicsName\\] \\- requests a new topic and claim it to yourself
   /claim \\- claim an existing topic that you will look into
   /vote \\- vote on topic
@@ -141,7 +142,7 @@ export class TopicsUpdate {
     }
   }
 
-  @Command('description')
+  @Command('changeDescription')
   async onModifyDescription(
     @Ctx() ctx: Context,
     @Sender() from: User,
@@ -167,6 +168,34 @@ export class TopicsUpdate {
     session.setUserActiveTopicId(id, topicId);
     debug(`activeTopic set userId: ${id} topicId: ${topicId}`);
     await ctx.scene.enter(DESCRIPTION_SCENE_ID);
+  }
+
+  @Command('changeName')
+  async onChangeName(
+    @Ctx() ctx: Context,
+    @Sender() from: User,
+    @Session() session: SessionStore,
+  ): Promise<void> {
+    debug('onChangeName');
+    const topics: Array<Topic> = session.topics;
+    const topicsButton = topics.map(({ name, topicId }) =>
+      Markup.button.callback(name, `changeName---${topicId}`),
+    );
+    ctx.reply(
+      'Change name by selecting a topic bellow',
+      Markup.inlineKeyboard(topicsButton),
+    );
+  }
+  @Action(new RegExp('changeName---[a-zA-Z0-9]*'))
+  async onChangeNameAction(
+    @Ctx() ctx: SceneContext,
+    @TopicId() topicId: string,
+    @Sender('id') id: string,
+    @Session() session: SessionStore,
+  ): Promise<void> {
+    session.setUserActiveTopicId(id, topicId);
+    debug(`activeTopic set userId: ${id} topicId: ${topicId}`);
+    await ctx.scene.enter(NAME_SCENE_ID);
   }
 
   @Command('schedule')
