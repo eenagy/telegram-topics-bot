@@ -38,7 +38,7 @@ export class TopicsUpdate {
   /submit \\[topicsName\\] \\- requests a new topic and claim it to yourself
   /claim \\- claim an existing topic that you will look into, it toggles when calling twice
   /vote \\- vote on topic
-  /schedule \\- schedule topic for date, only claimer or admin can schedule
+  /schedule \\- schedule topic for date, only claimer/admins can schedule
   /help \\- returns a help message\\.
   `;
   @Start()

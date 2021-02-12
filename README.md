@@ -66,9 +66,10 @@ No you can start your application either locally or deploy it to your own choosi
 
    - /help
    - /topics
-   - /request
-   - /submit
-   - /description
+   - /request [topicsName]
+   - /submit [topicsName]
+   - /changeDescription
+   - /changeName
    - /claim
    - /schedule
    - /vote
