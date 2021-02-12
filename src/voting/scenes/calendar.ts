@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import { Markup } from 'telegraf';
 import { InlineKeyboardButton } from 'telegraf/typings/telegram-types'
 
@@ -44,11 +45,12 @@ const defaultCalendar: TelegramCalenderOptions = {
   minDate: null,
   maxDate: null,
 };
-// TODO add injection for Calendar to module
+
+@Injectable()
 export class Calendar {
   options: TelegramCalenderOptions;
-  constructor(options?: TelegramCalenderOptions) {
-    this.options = Object.assign(defaultCalendar, options);
+  constructor() {
+    this.options = {...defaultCalendar};
   }
 
   renderToday(): any {
@@ -298,4 +300,3 @@ export class Calendar {
   }
 }
 
-export default Calendar;

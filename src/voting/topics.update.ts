@@ -69,7 +69,7 @@ export class TopicsUpdate {
             `  __Number of votes:__  ${votes.length}\n` +
             `  __Presented by:__         ` +
             (claimedBy == null ? ' \\-\n' : `@${claimedBy.username}\n`) +
-            `  __Scheduled for:__        ${scheduled || ' \\-'}\n` +
+            `  __Scheduled for:__        ${scheduled?.replace(/-/g, '\\-') || ' \\-'}\n` +
             `  __Description:__` +
             (description ? `\n\n${description}\n` : '             \\-')
           );

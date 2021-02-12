@@ -13,21 +13,26 @@ import {
 import { AUTO_TIMEOUT, SCHEDULE_SCENE_ID } from '../../app.constants';
 import { SceneContext } from 'telegraf/typings/scenes';
 import createDebug from 'debug';
-import Calendar from './calendar';
+import { Calendar } from 'src/voting/scenes/calendar';
+import { CallbackQuery } from 'telegraf/typings/telegram-types';
 
 const debug = createDebug('dappsbot');
-const calendar = new Calendar();
 
 @Scene(SCHEDULE_SCENE_ID)
 export class ScheduleScene {
   timeOut: NodeJS.Timeout;
+
+  constructor(private calendar: Calendar) {}
   @SceneEnter()
   async onSceneEnter(@Ctx() ctx: SceneContext): Promise<void> {
     debug('Schedule scene entered');
-    await ctx.reply('Select a date from the calendar', calendar.renderToday());
+    await ctx.reply(
+      'Select a date from the calendar',
+      this.calendar.renderToday(),
+    );
     this.timeOut = setTimeout(() => {
       if (ctx.scene) {
-        ctx.reply('You took too long to reply, please retry from /description');
+        ctx.reply('You took too long to reply, please retry from /schedule');
         ctx.scene.leave();
       }
     }, AUTO_TIMEOUT);
@@ -49,17 +54,20 @@ export class ScheduleScene {
       await ctx.reply(`Something went wrong`);
     } else {
       debug('TopicId ' + topicId);
-
+      const dateString = (ctx.callbackQuery as CallbackQuery.DataCallbackQuery).data.replace(
+        'calendar-telegram-date-',
+        '',
+      );
       const topics = session.topics;
       const topicIndex = topics.findIndex((t) => t.topicId === topicId);
       const topic = topics[topicIndex];
       if (topic) {
         debug('Topic found');
-        topic.scheduled = new Date().toDateString();
+        topic.scheduled = dateString;
         session.topics = topics;
-        debug('Topic description successfully updated');
+        debug('Topic schedule successfully updated');
 
-        await ctx.reply(`${topic.name} is scheduled at: ${new Date()}`);
+        await ctx.reply(`${topic.name} is scheduled at: ${dateString}`);
       }
     }
     clearTimeout(this.timeOut);
@@ -69,18 +77,39 @@ export class ScheduleScene {
   @Action(new RegExp(/calendar-telegram-prev-[\d-]+/g))
   async onCalendarPrev(@Ctx() ctx: SceneContext): Promise<void> {
     debug('onDateUpdated');
-    await ctx.editMessageReplyMarkup(calendar.renderToday())
-
+    const dateString = (ctx.callbackQuery as CallbackQuery.DataCallbackQuery).data.replace(
+      'calendar-telegram-prev-',
+      '',
+    );
+    const date = new Date(dateString);
+    date.setMonth(date.getMonth() - 1);
+    const {
+      reply_markup: { inline_keyboard },
+    } = this.calendar.getCalendarMarkup(date);
+    await ctx.editMessageReplyMarkup({
+      inline_keyboard,
+    });
   }
 
   @Action(new RegExp(/calendar-telegram-next-[\d-]+/g))
   async onCalendarNext(@Ctx() ctx: SceneContext): Promise<void> {
     debug('onDateUpdated');
-    await ctx.editMessageReplyMarkup(calendar.renderToday())
+    const dateString = (ctx.callbackQuery as CallbackQuery.DataCallbackQuery).data.replace(
+      'calendar-telegram-next-',
+      '',
+    );
+    const date = new Date(dateString);
+    date.setMonth(date.getMonth() + 1);
+    const {
+      reply_markup: { inline_keyboard },
+    } = this.calendar.getCalendarMarkup(date);
+    await ctx.editMessageReplyMarkup({
+      inline_keyboard,
+    });
   }
 
   @Action(new RegExp(/calendar-telegram-ignore-[\d\w-]+/g))
-   ignoreAction(): void {
+  ignoreAction(): void {
     debug('ignore calendar option');
   }
 
