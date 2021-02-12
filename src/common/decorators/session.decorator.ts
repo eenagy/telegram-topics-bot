@@ -20,7 +20,7 @@ export class SessionStore {
     this.session.set('topics', newTopics);
   }
 
-  public getUserActiveTopicId(userId: string): string | undefined {
+  public getUserActiveTopicId(userId: number): string | undefined {
     const activeTopics = this.session.get('activeTopics').value();
     const activeTopicIndex = activeTopics.findIndex(
       (active) => active.userId === userId,
@@ -31,7 +31,7 @@ export class SessionStore {
       return activeTopics[activeTopicIndex].topicId;
     }
   }
-  public setUserActiveTopicId(userId: string, topicId: string): void {
+  public setUserActiveTopicId(userId: number, topicId: string): void {
     const activeTopics = this.session.get('activeTopics').value();
     const activeTopicIndex = activeTopics.findIndex(
       (active) => active.userId === userId,

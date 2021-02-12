@@ -41,7 +41,7 @@ import {
       @Ctx() ctx: SceneContext,
       @Session() session: SessionStore,
       @Message('text') text: string,
-      @Sender('id') id: string,
+      @Sender('id') id: number,
     ): Promise<void> {
       debug('onNameUpdated');
     

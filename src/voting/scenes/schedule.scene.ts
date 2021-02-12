@@ -41,7 +41,7 @@ export class ScheduleScene {
   @Action(new RegExp(/calendar-telegram-date-[\d-]+/g))
   async onDateSelected(
     @Session() session: SessionStore,
-    @Sender('id') id: string,
+    @Sender('id') id: number,
     @Ctx() ctx: SceneContext,
   ): Promise<void> {
     debug('onDateUpdated');

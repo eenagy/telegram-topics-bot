@@ -14,11 +14,15 @@ import { nanoid } from 'nanoid';
 import { Session, SessionStore } from '../common/decorators/session.decorator';
 import { Topic } from '../interfaces/topic.interface';
 import { SceneContext } from 'telegraf/typings/scenes';
-import { DESCRIPTION_SCENE_ID, NAME_SCENE_ID, SCHEDULE_SCENE_ID } from '../app.constants';
+import {
+  DESCRIPTION_SCENE_ID,
+  NAME_SCENE_ID,
+  SCHEDULE_SCENE_ID,
+} from '../app.constants';
 import { TopicId } from '../common/decorators/topicid.decorator';
 import createDebug from 'debug';
 
-const debug = createDebug('dappsbot')
+const debug = createDebug('dappsbot');
 
 @Update()
 export class TopicsUpdate {
@@ -32,7 +36,7 @@ export class TopicsUpdate {
   /changeDescription \\- change description of  a selected topic
   /changeName \\- change name of a selected topic
   /submit \\[topicsName\\] \\- requests a new topic and claim it to yourself
-  /claim \\- claim an existing topic that you will look into
+  /claim \\- claim an existing topic that you will look into, it toggles when calling twice
   /vote \\- vote on topic
   /schedule \\- schedule topic for date, only claimer or admin can schedule
   /help \\- returns a help message\\.
@@ -70,7 +74,9 @@ export class TopicsUpdate {
             `  __Number of votes:__  ${votes.length}\n` +
             `  __Presented by:__         ` +
             (claimedBy == null ? ' \\-\n' : `@${claimedBy.username}\n`) +
-            `  __Scheduled for:__        ${scheduled?.replace(/-/g, '\\-') || ' \\-'}\n` +
+            `  __Scheduled for:__        ${
+              scheduled?.replace(/-/g, '\\-') || ' \\-'
+            }\n` +
             `  __Description:__` +
             (description ? `\n\n${description}\n` : '             \\-')
           );
@@ -162,12 +168,20 @@ export class TopicsUpdate {
   async onDescription(
     @Ctx() ctx: SceneContext,
     @TopicId() topicId: string,
-    @Sender('id') id: string,
+    @Sender('id') id: number,
     @Session() session: SessionStore,
   ): Promise<void> {
-    session.setUserActiveTopicId(id, topicId);
-    debug(`activeTopic set userId: ${id} topicId: ${topicId}`);
-    await ctx.scene.enter(DESCRIPTION_SCENE_ID);
+    const topic: Topic = session.topics[topicId];
+    if (topic.claimedBy && topic.claimedBy.id !== id) {
+      debug('Cannot change description of claimed topic');
+      await ctx.reply(
+        'Sorry you cannot change description of topic claimed by someone else',
+      );
+    } else {
+      session.setUserActiveTopicId(id, topicId);
+      debug(`activeTopic set userId: ${id} topicId: ${topicId}`);
+      await ctx.scene.enter(DESCRIPTION_SCENE_ID);
+    }
   }
 
   @Command('changeName')
@@ -190,12 +204,20 @@ export class TopicsUpdate {
   async onChangeNameAction(
     @Ctx() ctx: SceneContext,
     @TopicId() topicId: string,
-    @Sender('id') id: string,
+    @Sender('id') id: number,
     @Session() session: SessionStore,
   ): Promise<void> {
-    session.setUserActiveTopicId(id, topicId);
-    debug(`activeTopic set userId: ${id} topicId: ${topicId}`);
-    await ctx.scene.enter(NAME_SCENE_ID);
+    const topic: Topic = session.topics[topicId];
+    if (topic.claimedBy && topic.claimedBy.id !== id) {
+      debug('Cannot change name of claimed topic');
+      await ctx.reply(
+        'Sorry you cannot change name of topic claimed by someone else',
+      );
+    } else {
+      session.setUserActiveTopicId(id, topicId);
+      debug(`activeTopic set userId: ${id} topicId: ${topicId}`);
+      await ctx.scene.enter(NAME_SCENE_ID);
+    }
   }
 
   @Command('schedule')
@@ -219,12 +241,20 @@ export class TopicsUpdate {
   async onScheduleAction(
     @Ctx() ctx: SceneContext,
     @TopicId() topicId: string,
-    @Sender('id') id: string,
+    @Sender('id') id: number,
     @Session() session: SessionStore,
   ): Promise<void> {
-    session.setUserActiveTopicId(id, topicId);
-    debug(`activeTopic set userId: ${id} topicId: ${topicId}`);
-    await ctx.scene.enter(SCHEDULE_SCENE_ID);
+    const topic: Topic = session.topics[topicId];
+    if (topic.claimedBy && topic.claimedBy.id !== id) {
+      debug('Cannot schedule claimed topic');
+      await ctx.reply(
+        'Sorry you cannot schedule topic claimed by someone else',
+      );
+    } else {
+      session.setUserActiveTopicId(id, topicId);
+      debug(`activeTopic set userId: ${id} topicId: ${topicId}`);
+      await ctx.scene.enter(SCHEDULE_SCENE_ID);
+    }
   }
 
   @Command('claim')
@@ -243,20 +273,38 @@ export class TopicsUpdate {
     @Sender() from: User,
     @Session() session: SessionStore,
     @TopicId() topicId: string,
+    @Sender('id')
+    id: number,
   ): void {
     debug('onClaimAction');
-
-    const topics: Array<Topic> = session.topics;
-    const topicsIndex = topics.findIndex((topic) => topic.topicId === topicId);
-    if (topicsIndex < 0) {
-      debug('Could not find topicId');
-      ctx.reply('Something went wrong. Please try again');
+    const topic: Topic = session.topics[topicId];
+    if (topic.claimedBy && topic.claimedBy.id !== id) {
+      debug('cannot claim someone else topic');
+      ctx.reply(
+        'Cannot claim someone topics. Please ask the the person to remove the claim or create a similar topic.',
+      );
     } else {
-      const topic = topics[topicsIndex];
-      topic.claimedBy = from;
-      session.topics = topics;
-      debug('Topic claimed');
-      ctx.reply(`${topic.name} is claimed by @${from.username}`);
+      const topics: Array<Topic> = session.topics;
+      const topicsIndex = topics.findIndex(
+        (topic) => topic.topicId === topicId,
+      );
+      if (topicsIndex < 0) {
+        debug('Could not find topicId');
+        ctx.reply('Something went wrong. Please try again');
+      } else {
+        const topic = topics[topicsIndex];
+        if (topic.claimedBy) {
+          topic.claimedBy = null;
+          session.topics = topics;
+          debug('Topic unclaimed');
+          ctx.reply(`${topic.name} claim is removed`);
+        } else {
+          topic.claimedBy = from;
+          session.topics = topics;
+          debug('Topic claimed');
+          ctx.reply(`${topic.name} is claimed by @${from.username}`);
+        }
+      }
     }
   }
 
